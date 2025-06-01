@@ -3,90 +3,94 @@ class PomodoroTimer {
         // Timer state
         this.isRunning = false;
         this.isPaused = false;
-        this.isWorkSession = true;
+        this.currentMode = 'pomodoro'; // 'pomodoro', 'short-break', 'long-break'
         this.timeLeft = 0;
         this.totalTime = 0;
         this.sessionCount = 0;
         this.interval = null;
-        this.currentSessionInCycle = 0;
-        this.totalSessions = 4;
 
         // Settings
         this.settings = {
-            workDuration: 25,
-            breakDuration: 5,
-            longBreakDuration: 15,
-            sections: 4,
-            soundEnabled: true
+            pomodoro: 25,
+            shortBreak: 5,
+            longBreak: 15,
+            font: 'kumbh',
+            color: 'coral'
         };
 
         // DOM elements
-        this.timeDisplay = document.getElementById('time');
-        this.sessionTypeDisplay = document.getElementById('session-type');
-        this.startPauseBtn = document.getElementById('start-pause-btn');
-        this.taskInput = document.getElementById('task-input');
-        this.editTaskBtn = document.getElementById('edit-task-btn');
-        this.progressCircle = document.getElementById('progress-circle');
-        this.timerContent = document.querySelector('.timer-content');
-        this.progressDots = document.querySelectorAll('.dot');
-        
-        // Settings modal elements
-        this.settingsModal = document.getElementById('settings-modal');
-        this.saveSettingsBtn = document.getElementById('save-settings');
-        this.closeModalBtn = document.getElementById('close-modal');
-        this.cancelSettingsBtn = document.getElementById('cancel-settings');
-        this.workDurationSelect = document.getElementById('work-duration');
-        this.breakDurationSelect = document.getElementById('break-duration');
-        this.longBreakDurationSelect = document.getElementById('long-break-duration');
-        this.sectionsSelect = document.getElementById('sections');
-
-        // Navigation
-        this.navBtns = document.querySelectorAll('.nav-btn');
+        this.timerText = document.getElementById('timer-text');
         this.timerBtn = document.getElementById('timer-btn');
-        this.statsBtn = document.getElementById('stats-btn');
+        this.progressCircle = document.getElementById('progress-circle');
+        this.tabBtns = document.querySelectorAll('.tab-btn');
+        this.settingsBtn = document.getElementById('settings-btn');
+        this.modal = document.getElementById('settings-modal');
+        this.modalClose = document.getElementById('modal-close');
+        this.applyBtn = document.getElementById('apply-btn');
+
+        // Settings inputs
+        this.pomodoroTimeInput = document.getElementById('pomodoro-time');
+        this.shortBreakTimeInput = document.getElementById('short-break-time');
+        this.longBreakTimeInput = document.getElementById('long-break-time');
+        this.fontBtns = document.querySelectorAll('.font-btn');
+        this.colorBtns = document.querySelectorAll('.color-btn');
+        this.arrowBtns = document.querySelectorAll('.arrow-btn');
 
         this.init();
     }
 
     init() {
         this.loadSettings();
+        this.applyTheme();
         this.resetTimer();
         this.bindEvents();
-        this.updateProgressDots();
-        this.loadTask();
+        this.updateSettingsInputs();
     }
 
     bindEvents() {
-        this.startPauseBtn.addEventListener('click', () => this.toggleTimer());
-        this.editTaskBtn.addEventListener('click', () => this.editTask());
-        this.taskInput.addEventListener('blur', () => this.saveTask());
-        this.taskInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                this.taskInput.blur();
+        // Timer button
+        this.timerBtn.addEventListener('click', () => this.toggleTimer());
+
+        // Tab buttons
+        this.tabBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => this.switchMode(e.target.dataset.mode));
+        });
+
+        // Settings modal
+        this.settingsBtn.addEventListener('click', () => this.openModal());
+        this.modalClose.addEventListener('click', () => this.closeModal());
+        this.applyBtn.addEventListener('click', () => this.applySettings());
+
+        // Close modal when clicking outside
+        this.modal.addEventListener('click', (e) => {
+            if (e.target === this.modal) {
+                this.closeModal();
             }
         });
 
-        // Settings
-        this.saveSettingsBtn.addEventListener('click', () => this.saveSettings());
-        this.closeModalBtn.addEventListener('click', () => this.closeSettingsModal());
-        this.cancelSettingsBtn.addEventListener('click', () => this.closeSettingsModal());
-        this.statsBtn.addEventListener('click', () => this.openSettingsModal());
-        
-        // Close modal when clicking outside
-        this.settingsModal.addEventListener('click', (e) => {
-            if (e.target === this.settingsModal) {
-                this.closeSettingsModal();
-            }
+        // Font selection
+        this.fontBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => this.selectFont(e.target.dataset.font));
+        });
+
+        // Color selection
+        this.colorBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => this.selectColor(e.target.dataset.color));
+        });
+
+        // Arrow buttons for time inputs
+        this.arrowBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => this.handleArrowClick(e));
         });
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' && !this.settingsModal.classList.contains('active') && e.target !== this.taskInput) {
+            if (e.code === 'Space' && !this.modal.classList.contains('active')) {
                 e.preventDefault();
                 this.toggleTimer();
             }
             if (e.key === 'Escape') {
-                this.closeSettingsModal();
+                this.closeModal();
             }
         });
     }
@@ -101,56 +105,74 @@ class PomodoroTimer {
         if (savedSessionCount) {
             this.sessionCount = parseInt(savedSessionCount);
         }
-
-        this.totalSessions = this.settings.sections;
-
-        // Update settings inputs
-        this.workDurationSelect.value = this.settings.workDuration;
-        this.breakDurationSelect.value = this.settings.breakDuration;
-        this.longBreakDurationSelect.value = this.settings.longBreakDuration;
-        this.sectionsSelect.value = this.settings.sections;
     }
 
     saveSettings() {
-        this.settings.workDuration = parseInt(this.workDurationSelect.value);
-        this.settings.breakDuration = parseInt(this.breakDurationSelect.value);
-        this.settings.longBreakDuration = parseInt(this.longBreakDurationSelect.value);
-        this.settings.sections = parseInt(this.sectionsSelect.value);
-
         localStorage.setItem('pomodoroSettings', JSON.stringify(this.settings));
-        this.totalSessions = this.settings.sections;
+    }
+
+    updateSettingsInputs() {
+        this.pomodoroTimeInput.value = this.settings.pomodoro;
+        this.shortBreakTimeInput.value = this.settings.shortBreak;
+        this.longBreakTimeInput.value = this.settings.longBreak;
+
+        // Update font selection
+        this.fontBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.font === this.settings.font);
+        });
+
+        // Update color selection
+        this.colorBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.color === this.settings.color);
+        });
+    }
+
+    applyTheme() {
+        // Apply font
+        document.body.className = document.body.className.replace(/\b\w+-font\b/g, '');
+        document.body.classList.add(`${this.settings.font}-font`);
+
+        // Apply color theme
+        document.body.className = document.body.className.replace(/\b\w+-theme\b/g, '');
+        document.body.classList.add(`${this.settings.color}-theme`);
+    }
+
+    switchMode(mode) {
+        if (this.isRunning) return; // Don't switch modes while timer is running
+
+        this.currentMode = mode;
         
-        // If timer is not running, update with new settings
-        if (!this.isRunning) {
-            this.resetTimer();
-            this.updateProgressDots();
+        // Update tab buttons
+        this.tabBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.mode === mode);
+        });
+
+        this.resetTimer();
+    }
+
+    resetTimer() {
+        this.isRunning = false;
+        this.isPaused = false;
+        
+        // Set time based on current mode
+        switch (this.currentMode) {
+            case 'pomodoro':
+                this.timeLeft = this.settings.pomodoro * 60;
+                break;
+            case 'short-break':
+                this.timeLeft = this.settings.shortBreak * 60;
+                break;
+            case 'long-break':
+                this.timeLeft = this.settings.longBreak * 60;
+                break;
         }
         
-        this.closeSettingsModal();
-    }
-
-    openSettingsModal() {
-        this.settingsModal.classList.add('active');
-    }
-
-    closeSettingsModal() {
-        this.settingsModal.classList.remove('active');
-    }
-
-    loadTask() {
-        const savedTask = localStorage.getItem('pomodoroTask');
-        if (savedTask) {
-            this.taskInput.value = savedTask;
-        }
-    }
-
-    saveTask() {
-        localStorage.setItem('pomodoroTask', this.taskInput.value);
-    }
-
-    editTask() {
-        this.taskInput.focus();
-        this.taskInput.select();
+        this.totalTime = this.timeLeft;
+        this.timerBtn.textContent = 'START';
+        
+        clearInterval(this.interval);
+        this.updateDisplay();
+        this.updateProgress();
     }
 
     toggleTimer() {
@@ -164,8 +186,7 @@ class PomodoroTimer {
     startTimer() {
         this.isRunning = true;
         this.isPaused = false;
-        this.updatePlayPauseButton();
-        this.timerContent.classList.add('working');
+        this.timerBtn.textContent = 'PAUSE';
 
         this.interval = setInterval(() => {
             this.timeLeft--;
@@ -181,115 +202,104 @@ class PomodoroTimer {
     pauseTimer() {
         this.isRunning = false;
         this.isPaused = true;
-        this.updatePlayPauseButton();
-        this.timerContent.classList.remove('working');
+        this.timerBtn.textContent = 'START';
         clearInterval(this.interval);
-    }
-
-    resetTimer() {
-        this.isRunning = false;
-        this.isPaused = false;
-        this.isWorkSession = true;
-        this.currentSessionInCycle = 0;
-        
-        this.timeLeft = this.settings.workDuration * 60;
-        this.totalTime = this.timeLeft;
-        
-        this.updatePlayPauseButton();
-        this.timerContent.classList.remove('working');
-        this.sessionTypeDisplay.textContent = 'Focus time';
-        this.sessionTypeDisplay.classList.remove('break');
-        this.progressCircle.classList.remove('break');
-        
-        clearInterval(this.interval);
-        this.updateDisplay();
-        this.updateProgress();
-        this.updateProgressDots();
     }
 
     completeSession() {
         this.isRunning = false;
         clearInterval(this.interval);
-        this.timerContent.classList.remove('working');
 
-        if (this.isWorkSession) {
-            // Completed a work session
+        // Count completed pomodoro sessions
+        if (this.currentMode === 'pomodoro') {
             this.sessionCount++;
-            this.currentSessionInCycle++;
             this.saveSessionCount();
-            
-            // Determine if it's time for a long break
-            const isLongBreak = this.currentSessionInCycle >= this.totalSessions;
-            
-            if (isLongBreak) {
-                this.currentSessionInCycle = 0;
-                this.timeLeft = this.settings.longBreakDuration * 60;
-                this.sessionTypeDisplay.textContent = 'Long break';
-            } else {
-                this.timeLeft = this.settings.breakDuration * 60;
-                this.sessionTypeDisplay.textContent = 'Short break';
-            }
-            
-            this.isWorkSession = false;
-            this.totalTime = this.timeLeft;
-            this.sessionTypeDisplay.classList.add('break');
-            this.progressCircle.classList.add('break');
-        } else {
-            // Completed a break
-            this.isWorkSession = true;
-            this.timeLeft = this.settings.workDuration * 60;
-            this.totalTime = this.timeLeft;
-            this.sessionTypeDisplay.textContent = 'Focus time';
-            this.sessionTypeDisplay.classList.remove('break');
-            this.progressCircle.classList.remove('break');
         }
 
-        this.updatePlayPauseButton();
-        this.updateDisplay();
-        this.updateProgress();
-        this.updateProgressDots();
+        this.timerBtn.textContent = 'START';
         this.playNotificationSound();
         this.showNotification();
+
+        // Auto-switch to appropriate break mode
+        if (this.currentMode === 'pomodoro') {
+            // Switch to break mode based on session count
+            const nextMode = this.sessionCount % 4 === 0 ? 'long-break' : 'short-break';
+            this.switchMode(nextMode);
+        } else {
+            // Switch back to pomodoro mode
+            this.switchMode('pomodoro');
+        }
     }
 
     updateDisplay() {
         const minutes = Math.floor(this.timeLeft / 60);
         const seconds = this.timeLeft % 60;
-        this.timeDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        this.timerText.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
 
     updateProgress() {
         const progress = (this.totalTime - this.timeLeft) / this.totalTime;
-        const circumference = 2 * Math.PI * 120; // radius = 120
+        const circumference = 2 * Math.PI * 164; // radius = 164
         const dashOffset = circumference - (progress * circumference);
         this.progressCircle.style.strokeDashoffset = dashOffset;
     }
 
-    updateProgressDots() {
-        this.progressDots.forEach((dot, index) => {
-            if (index < this.currentSessionInCycle) {
-                dot.classList.add('active');
-            } else {
-                dot.classList.remove('active');
-            }
+    openModal() {
+        this.modal.classList.add('active');
+        this.updateSettingsInputs();
+    }
+
+    closeModal() {
+        this.modal.classList.remove('active');
+    }
+
+    selectFont(font) {
+        this.settings.font = font;
+        this.fontBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.font === font);
         });
     }
 
-    updatePlayPauseButton() {
-        const svg = this.startPauseBtn.querySelector('svg');
+    selectColor(color) {
+        this.settings.color = color;
+        this.colorBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.color === color);
+        });
+    }
+
+    handleArrowClick(e) {
+        const target = e.target.closest('.arrow-btn');
+        const inputId = target.dataset.target;
+        const input = document.getElementById(inputId);
+        const isUp = target.classList.contains('up');
         
-        if (this.isRunning) {
-            // Show pause icon
-            svg.innerHTML = `
-                <rect x="6" y="4" width="4" height="16"></rect>
-                <rect x="14" y="4" width="4" height="16"></rect>
-            `;
-            this.startPauseBtn.classList.add('paused');
-        } else {
-            // Show play icon
-            svg.innerHTML = `<path d="M8 5v14l11-7z"/>`;
-            this.startPauseBtn.classList.remove('paused');
+        let currentValue = parseInt(input.value);
+        const min = parseInt(input.min);
+        const max = parseInt(input.max);
+
+        if (isUp && currentValue < max) {
+            input.value = currentValue + 1;
+        } else if (!isUp && currentValue > min) {
+            input.value = currentValue - 1;
         }
+    }
+
+    applySettings() {
+        // Update time settings
+        this.settings.pomodoro = parseInt(this.pomodoroTimeInput.value);
+        this.settings.shortBreak = parseInt(this.shortBreakTimeInput.value);
+        this.settings.longBreak = parseInt(this.longBreakTimeInput.value);
+
+        // Apply theme changes
+        this.applyTheme();
+        this.saveSettings();
+
+        // Reset timer if not running
+        if (!this.isRunning) {
+            this.resetTimer();
+        }
+
+        this.closeModal();
     }
 
     saveSessionCount() {
@@ -297,8 +307,6 @@ class PomodoroTimer {
     }
 
     playNotificationSound() {
-        if (!this.settings.soundEnabled) return;
-
         // Create a simple beep sound using Web Audio API
         try {
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -325,9 +333,17 @@ class PomodoroTimer {
     showNotification() {
         // Show browser notification if permission granted
         if ('Notification' in window && Notification.permission === 'granted') {
-            const message = this.isWorkSession ? 
-                'Break time! Take a short rest.' : 
-                'Break\'s over! Time to focus.';
+            let message = '';
+            
+            switch (this.currentMode) {
+                case 'pomodoro':
+                    message = 'Time for a break! Great work on your focus session.';
+                    break;
+                case 'short-break':
+                case 'long-break':
+                    message = 'Break time is over! Ready to get back to work?';
+                    break;
+            }
             
             new Notification('🍅 Pomodoro Timer', {
                 body: message,
