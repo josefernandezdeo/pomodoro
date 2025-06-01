@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍅 Pomodoro Timer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Task Input Section -->
+        <div class="task-section">
+            <div class="task-input-container">
+                <input type="text" id="task-input" placeholder="What are you working on?" value="Write an article">
+                <button class="edit-task-btn" id="edit-task-btn">✏️</button>
+            </div>
+        </div>
+
+        <!-- Main Timer Section -->
+        <div class="timer-section">
+            <div class="timer-circle">
+                <svg class="progress-svg" width="280" height="280" viewBox="0 0 280 280">
+                    <circle class="progress-track" cx="140" cy="140" r="120"></circle>
+                    <circle class="progress-bar" cx="140" cy="140" r="120" id="progress-circle"></circle>
+                </svg>
+                
+                <div class="timer-content">
+                    <div class="time-display" id="time">25:00</div>
+                    <div class="session-label" id="session-type">Focus time</div>
+                </div>
+            </div>
+
+            <!-- Progress Indicators -->
+            <div class="progress-dots">
+                <div class="dot active"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+
+            <!-- Play/Pause Button -->
+            <div class="control-center">
+                <button class="play-pause-btn" id="start-pause-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <button class="nav-btn" id="calendar-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                </svg>
+            </button>
+            <button class="nav-btn active" id="timer-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M15,1H9V3H15M11,14H13V8H11M19.03,7.39L20.45,5.97C20,5.46 19.55,5 19.04,4.56L17.62,6C16.07,4.74 14.12,4 12,4A9,9 0 0,0 3,13A9,9 0 0,0 12,22C17,22 21,17.97 21,13C21,10.88 20.26,8.93 19.03,7.39Z"/>
+                </svg>
+            </button>
+            <button class="nav-btn" id="stats-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M22,21H2V3H4V19H6V17H10V19H12V16H16V19H18V17H22V21Z"/>
+                </svg>
+            </button>
+            <button class="nav-btn" id="profile-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button class="back-btn" id="close-modal">←</button>
+                <h3>Add new timer</h3>
+            </div>
+            
+            <div class="setting-row">
+                <label>Focus time</label>
+                <select id="work-duration">
+                    <option value="15">15 min</option>
+                    <option value="20">20 min</option>
+                    <option value="25" selected>25 min</option>
+                    <option value="30">30 min</option>
+                    <option value="45">45 min</option>
+                    <option value="60">60 min</option>
+                </select>
+            </div>
+
+            <div class="setting-row">
+                <label>Short break</label>
+                <select id="break-duration">
+                    <option value="5" selected>5 min</option>
+                    <option value="10">10 min</option>
+                    <option value="15">15 min</option>
+                </select>
+            </div>
+
+            <div class="setting-row">
+                <label>Long break</label>
+                <select id="long-break-duration">
+                    <option value="15" selected>15 min</option>
+                    <option value="20">20 min</option>
+                    <option value="30">30 min</option>
+                </select>
+            </div>
+
+            <div class="setting-row">
+                <label>Sections</label>
+                <select id="sections">
+                    <option value="2">2 intervals</option>
+                    <option value="3">3 intervals</option>
+                    <option value="4" selected>4 intervals</option>
+                    <option value="5">5 intervals</option>
+                    <option value="6">6 intervals</option>
+                </select>
+            </div>
+
+            <div class="modal-actions">
+                <button class="cancel-btn" id="cancel-settings">Cancel</button>
+                <button class="save-btn" id="save-settings">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
