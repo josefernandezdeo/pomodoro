@@ -30,6 +30,11 @@ class PomodoroTimer {
         this.pointsValue = document.getElementById('points');
         this.app = document.querySelector('.app');
 
+        // Coming Soon Modal
+        this.comingSoonModal = document.getElementById('coming-soon-modal');
+        this.comingSoonClose = document.getElementById('coming-soon-close');
+        this.comingSoonMessage = document.getElementById('coming-soon-message');
+
         // Settings inputs
         this.focusTimeInput = document.getElementById('focus-time');
         this.shortBreakInput = document.getElementById('short-break');
@@ -46,10 +51,20 @@ class PomodoroTimer {
         this.modalClose.addEventListener('click', () => this.closeSettings());
         this.saveSettings.addEventListener('click', () => this.handleSaveSettings());
         
+        // Coming Soon Modal
+        this.comingSoonClose.addEventListener('click', () => this.closeComingSoon());
+        
         // Close modal when clicking outside
         this.settingsModal.addEventListener('click', (e) => {
             if (e.target === this.settingsModal) {
                 this.closeSettings();
+            }
+        });
+
+        // Close Coming Soon modal when clicking outside
+        this.comingSoonModal.addEventListener('click', (e) => {
+            if (e.target === this.comingSoonModal) {
+                this.closeComingSoon();
             }
         });
 
@@ -60,9 +75,17 @@ class PomodoroTimer {
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' && !this.settingsModal.classList.contains('active')) {
+            if (e.code === 'Space' && !this.settingsModal.classList.contains('active') && !this.comingSoonModal.classList.contains('active')) {
                 e.preventDefault();
                 this.toggleTimer();
+            }
+            if (e.code === 'Escape') {
+                if (this.settingsModal.classList.contains('active')) {
+                    this.closeSettings();
+                }
+                if (this.comingSoonModal.classList.contains('active')) {
+                    this.closeComingSoon();
+                }
             }
         });
     }
@@ -205,6 +228,22 @@ class PomodoroTimer {
         this.settingsModal.classList.remove('active');
     }
 
+    openComingSoon(featureName) {
+        const messages = {
+            timeline: "📅 Timeline view is coming soon! Track your daily productivity sessions and see your focus patterns over time.",
+            garden: "🌱 Your tomato garden is growing! Soon you'll be able to plant and nurture virtual tomatoes with each completed session.",
+            blacklist: "🚫 Distraction blocker is in development! Block websites and apps during your focus sessions for ultimate productivity.",
+            usage: "📊 Usage statistics are on the way! Get detailed insights into your productivity habits and session patterns."
+        };
+        
+        this.comingSoonMessage.textContent = messages[featureName] || "This amazing feature is being prepared with love! 🍅";
+        this.comingSoonModal.classList.add('active');
+    }
+
+    closeComingSoon() {
+        this.comingSoonModal.classList.remove('active');
+    }
+
     handleSaveSettings() {
         const newFocusTime = parseInt(this.focusTimeInput.value) * 60;
         const newShortBreak = parseInt(this.shortBreakInput.value) * 60;
@@ -256,23 +295,15 @@ class PomodoroTimer {
         
         const navType = item.dataset.nav;
         
-        // Show notification for different nav items
-        switch (navType) {
-            case 'timeline':
-                this.showNotification('Timeline view coming soon! 📅');
-                break;
-            case 'garden':
-                this.showNotification('Your tomato garden! 🌱');
-                break;
-            case 'blacklist':
-                this.showNotification('Distraction blocklist! 🚫');
-                break;
-            case 'usage':
-                this.showNotification('Usage statistics! 📊');
-                break;
-            default:
-                // Timer is already active
-                break;
+        // Show Coming Soon modal for unimplemented features
+        if (navType !== 'timer') {
+            // Reset timer tab as active since other features aren't implemented
+            setTimeout(() => {
+                this.navItems.forEach(nav => nav.classList.remove('active'));
+                document.querySelector('[data-nav="timer"]').classList.add('active');
+            }, 100);
+            
+            this.openComingSoon(navType);
         }
     }
 
